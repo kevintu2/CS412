@@ -17,6 +17,9 @@ const evaluate = input =>{
     else if(input.charAt(1).localeCompare("^") == 0){
         return pow(a,b);
     }
+    else if(input.charAt(1).localeCompare("%") == 0) {
+        return mod(a, b);
+    }
     else{
         return "No valid Expression";
     }
@@ -34,8 +37,14 @@ const multi = (a,b) =>{
 const div = (a,b) =>{
     return a/b;
 }
-const pow = (a,b) =>{
-    return Math.pow(a,b);
+const pow = (a,b) => {
+    return Math.pow(a, b);
 }
 
-console.log(evaluate("8^2"));
+const mod = (a,b) => {
+    return a % b;
+}
+
+const expression = '8%3';
+let operator = evaluate(expression);
+console.log(operator);
