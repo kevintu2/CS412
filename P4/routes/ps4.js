@@ -4,8 +4,18 @@ var router = express.Router();
 const request = require('request');
 const {response} = require("express");
 const fetch = require('node-fetch');
+const redis = require('redis');
+const client = redis.createClient();
+
 
 const weather = 'http://api.weatherapi.com/v1/current.json?key=42204764f91244e8806193530212210&q=Boston&aqi=no';
+
+client.flushdb((err, success) => {
+  if (err) {
+      throw new Error(err)
+  }
+});
+
 //Part B
 router.post('/partB', function (req, res, next) {
   return new Promise((resolve, reject) => {
@@ -57,10 +67,32 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/', async function(req, res, next) {
+  
   const city = req.body.City;
-  console.log(req.body);
-  const request = await fetch(`http://api.weatherapi.com/v1/current.json?key=42204764f91244e8806193530212210&q=${city}&aqi=no`)
-  const data = await request.text()
+  client.exists(city, async function(err, match) {  //looks for key
+    if (err) {
+        throw new Error(err)
+    }
+    if (match) { //key exists, grab value
+      client.get(city, (err, response) => {
+          console.table(response);
+          res.send(JSON.stringify(response + ' cached '))
+      })
+    }
+    else{
+      console.log(req.body);
+      const request = await fetch(`http://api.weatherapi.com/v1/current.json?key=42204764f91244e8806193530212210&q=${city}&aqi=no`)
+      const data = await request.text()
+      client.set(city, data, 'EX', 5, (err, response) => { //city = key, data = value
+        console.table(response);
+        res.send(JSON.stringify(data + ' not cached '))
+    })
+
+    }
+  })
+  // console.log(req.body);
+  // const request = await fetch(`http://api.weatherapi.com/v1/current.json?key=42204764f91244e8806193530212210&q=${city}&aqi=no`)
+  // const data = await request.text()
   res.render('ps4', {data:data})
 });
 
