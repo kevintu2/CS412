@@ -5,16 +5,22 @@ const request = require('request');
 const {response} = require("express");
 const fetch = require('node-fetch');
 const redis = require('redis');
-const client = redis.createClient();
+const axios = require('axios');
+
+const client = redis.createClient({
+  host: '127.0.0.1',
+  port: 6379,
+});
+
 
 
 const weather = 'http://api.weatherapi.com/v1/current.json?key=42204764f91244e8806193530212210&q=Boston&aqi=no';
 
-client.flushdb((err, success) => {
-  if (err) {
-      throw new Error(err)
-  }
-});
+// client.flushdb((err, success) => {
+//   if (err) {
+//       throw new Error(err)
+//   }
+// });
 
 //Part B
 router.post('/partB', function (req, res, next) {
@@ -76,24 +82,25 @@ router.post('/', async function(req, res, next) {
     if (match) { //key exists, grab value
       client.get(city, (err, response) => {
           console.table(response);
-          res.send(JSON.stringify(response + ' cached '))
+          res.send(JSON.stringify(response + ' HIT THIS IS FROM CACHE '))
+          cache = 'HIT CACHE'
+          res.render('ps4', {data:response, cache: cache })
       })
     }
     else{
       console.log(req.body);
       const request = await fetch(`http://api.weatherapi.com/v1/current.json?key=42204764f91244e8806193530212210&q=${city}&aqi=no`)
       const data = await request.text()
-      client.set(city, data, 'EX', 5, (err, response) => { //city = key, data = value
+      client.set(city, data, 'EX', 15, (err, response) => { //city = key, data = value
         console.table(response);
-        res.send(JSON.stringify(data + ' not cached '))
-    })
+        res.send(JSON.stringify(data + ' The data is not from the Cache '))
+        cache = 'MISS CACHE'
+        res.render('ps4', {data:data, cache: cache})
+    })  
 
     }
   })
-  // console.log(req.body);
-  // const request = await fetch(`http://api.weatherapi.com/v1/current.json?key=42204764f91244e8806193530212210&q=${city}&aqi=no`)
-  // const data = await request.text()
-  res.render('ps4', {data:data})
+
 });
 
 
